@@ -71,6 +71,7 @@ int add_cmdline(int p_argc, char **p_args) {
 	return p_argc;
 }
 
+
 int ios_main(int argc, char **argv) {
 	size_t len = strlen(argv[0]);
 
@@ -117,3 +118,10 @@ void ios_finish() {
 	Main::cleanup();
 	delete os;
 }
+
+#if defined(LIBRARY_ENABLED)
+#include "core/libgodot/libgodot.h"
+extern "C" LIBGODOT_API int godot_main(int argc, char *argv[]) {
+	return ios_main(argc, argv);
+}
+#endif

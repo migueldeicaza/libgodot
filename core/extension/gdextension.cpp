@@ -739,9 +739,14 @@ Error GDExtension::open_library(const String &p_path, const String &p_entry_symb
 	}
 
 	GDExtensionInitializationFunction initialization_function = (GDExtensionInitializationFunction)entry_funcptr;
-	GDExtensionBool ret = initialization_function(&gdextension_get_proc_address, this, &initialization);
+	return initialize_extension_function(initialization_function, p_entry_symbol);
+}
 
-	if (ret) {
+Error GDExtension::initialize_extension_function(GDExtensionInitializationFunction initialization_function, const String &p_entry_symbol) {
+	if (library == nullptr) {
+		embedded = true;
+	}
+	if (initialization_function(&gdextension_get_proc_address, this, &initialization)) {
 		level_initialized = -1;
 		return OK;
 	} else {
@@ -752,6 +757,9 @@ Error GDExtension::open_library(const String &p_path, const String &p_entry_symb
 }
 
 void GDExtension::close_library() {
+	if (embedded) {
+		return;
+	}
 	ERR_FAIL_NULL(library);
 	OS::get_singleton()->close_dynamic_library(library);
 
@@ -770,17 +778,21 @@ void GDExtension::close_library() {
 #endif
 }
 
+bool GDExtension::is_embedded() const {
+	return embedded;
+}
+
 bool GDExtension::is_library_open() const {
-	return library != nullptr;
+	return (library != nullptr) || embedded;
 }
 
 GDExtension::InitializationLevel GDExtension::get_minimum_library_initialization_level() const {
-	ERR_FAIL_NULL_V(library, INITIALIZATION_LEVEL_CORE);
+	ERR_FAIL_COND_V(library == nullptr && !embedded, INITIALIZATION_LEVEL_CORE);
 	return InitializationLevel(initialization.minimum_initialization_level);
 }
 
 void GDExtension::initialize_library(InitializationLevel p_level) {
-	ERR_FAIL_NULL(library);
+	ERR_FAIL_COND(library == nullptr && !embedded);
 	ERR_FAIL_COND_MSG(p_level <= int32_t(level_initialized), vformat("Level '%d' must be higher than the current level '%d'", p_level, level_initialized));
 
 	level_initialized = int32_t(p_level);
@@ -790,7 +802,7 @@ void GDExtension::initialize_library(InitializationLevel p_level) {
 	initialization.initialize(initialization.userdata, GDExtensionInitializationLevel(p_level));
 }
 void GDExtension::deinitialize_library(InitializationLevel p_level) {
-	ERR_FAIL_NULL(library);
+	ERR_FAIL_COND(library == nullptr && !embedded);
 	ERR_FAIL_COND(p_level > int32_t(level_initialized));
 
 	level_initialized = int32_t(p_level) - 1;

@@ -33,6 +33,9 @@
 #include "core/extension/gdextension_compat_hashes.h"
 #include "core/io/file_access.h"
 #include "core/object/script_language.h"
+#ifdef LIBRARY_ENABLED
+#include "core/libgodot/libgodot.h"
+#endif
 
 GDExtensionManager::LoadStatus GDExtensionManager::_load_extension_internal(const Ref<GDExtension> &p_extension) {
 	if (level >= 0) { // Already initialized up to some level.
@@ -234,8 +237,10 @@ void GDExtensionManager::load_extensions() {
 			ERR_CONTINUE_MSG(err == LOAD_STATUS_FAILED, "Error loading extension: " + s);
 		}
 	}
-
 	OS::get_singleton()->load_platform_gdextensions();
+#ifdef LIBRARY_ENABLED
+	libgodot_init_resource();
+#endif
 }
 
 void GDExtensionManager::reload_extensions() {
