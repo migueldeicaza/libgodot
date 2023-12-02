@@ -51,8 +51,15 @@ void OS_MacOS::pre_wait_observer_cb(CFRunLoopObserverRef p_observer, CFRunLoopAc
 	// Do not redraw when rendering is done from the separate thread, it will conflict with the OpenGL context updates.
 
 	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
-	if (get_singleton()->get_main_loop() && ds && (get_singleton()->get_render_thread_mode() != RENDER_SEPARATE_THREAD) && !ds->get_is_resizing()) {
-		Main::force_redraw();
+	if (get_singleton()->get_main_loop() && ds && (get_singleton()->get_render_thread_mode() != RENDER_SEPARATE_THREAD)) {
+		if (!ds->get_is_resizing()) {
+			// Don't force redraws during resize.
+			// -[GodotContentLayerDelegate displayLayer:] forces redraws during resizing, and
+			// also calls Main::iteration(), but only when the window is actively resized. If
+			// the mouse is still held down, but not moving, the game stalls.
+
+			Main::force_redraw();
+		}
 		if (!Main::is_iterating()) { // Avoid cyclic loop.
 			Main::iteration();
 		}
