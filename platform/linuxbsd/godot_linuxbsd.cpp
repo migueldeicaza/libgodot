@@ -41,7 +41,7 @@
 #include <sys/resource.h>
 #endif
 
-int main(int argc, char *argv[]) {
+int linux_main(int argc, char *argv[]) {
 #if defined(SANITIZERS_ENABLED)
 	// Note: Set stack size to be at least 30 MB (vs 8 MB default) to avoid overflow, address sanitizer can increase stack usage up to 3 times.
 	struct rlimit stack_lim = { 0x1E00000, 0x1E00000 };
@@ -88,6 +88,10 @@ int main(int argc, char *argv[]) {
 #if defined(LIBRARY_ENABLED)
 #include "core/libgodot/libgodot.h"
 extern "C" LIBGODOT_API int godot_main(int argc, char *argv[]) {
-	return main(argc, argv);
+	return linux_main(argc, argv);
+}
+#else
+int main(int argc, char *argv[]) {
+	return linux_main(argc, argv);	
 }
 #endif
