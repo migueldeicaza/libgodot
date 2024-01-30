@@ -211,6 +211,15 @@ static void gdextension_mem_free(void *p_mem) {
 	memfree(p_mem);
 }
 
+static void gdextension_mem_release(void *p_mem) {
+	if (p_mem != nullptr) {
+		RefCounted *p_rc = reinterpret_cast<RefCounted*>(p_mem);
+		if (p_rc->unreference()) {
+			memdelete(p_rc);
+		}
+	}
+}
+
 // Helper print functions.
 static void gdextension_print_error(const char *p_description, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify) {
 	_err_print_error(p_function, p_file, p_line, p_description, p_editor_notify, ERR_HANDLER_ERROR);
@@ -1380,6 +1389,7 @@ void gdextension_setup_interface() {
 	REGISTER_INTERFACE_FUNC(mem_alloc);
 	REGISTER_INTERFACE_FUNC(mem_realloc);
 	REGISTER_INTERFACE_FUNC(mem_free);
+	REGISTER_INTERFACE_FUNC(mem_release);
 	REGISTER_INTERFACE_FUNC(print_error);
 	REGISTER_INTERFACE_FUNC(print_error_with_message);
 	REGISTER_INTERFACE_FUNC(print_warning);
