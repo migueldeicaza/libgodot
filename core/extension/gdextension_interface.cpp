@@ -41,6 +41,8 @@
 #include "core/os/memory.h"
 #include "core/variant/variant.h"
 #include "core/version.h"
+#include "main/main.h"
+#include "servers/display_server.h"
 
 class CallableCustomExtension : public CallableCustom {
 	void *userdata;
@@ -1209,6 +1211,15 @@ static void gdextension_ref_set_object(GDExtensionRefPtr p_ref, GDExtensionObjec
 	ref->reference_ptr(o);
 }
 
+static void gdextension_displayserver_set_runloop(void (*runloop) (void)) {
+	auto display_server = DisplayServer::get_singleton();
+	display_server->set_runloop(runloop);
+}
+
+static void gdextension_main_iteration() {
+	Main::iteration();
+}
+
 #ifndef DISABLE_DEPRECATED
 static GDExtensionScriptInstancePtr gdextension_script_instance_create(const GDExtensionScriptInstanceInfo *p_info, GDExtensionScriptInstanceDataPtr p_instance_data) {
 	GDExtensionScriptInstanceInfo2 *info_2 = memnew(GDExtensionScriptInstanceInfo2);
@@ -1516,6 +1527,8 @@ void gdextension_setup_interface() {
 	REGISTER_INTERFACE_FUNC(classdb_get_class_tag);
 	REGISTER_INTERFACE_FUNC(editor_add_plugin);
 	REGISTER_INTERFACE_FUNC(editor_remove_plugin);
+	REGISTER_INTERFACE_FUNC(displayserver_set_runloop);
+	REGISTER_INTERFACE_FUNC(main_iteration);
 }
 
 #undef REGISTER_INTERFACE_FUNCTION

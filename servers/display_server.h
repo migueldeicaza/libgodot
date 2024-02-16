@@ -38,15 +38,29 @@
 
 class Texture2D;
 
+typedef void (*runloop_function_t) (void);
+
+static void __default_run_loop() {}
+
 class DisplayServer : public Object {
 	GDCLASS(DisplayServer, Object)
 
 	static DisplayServer *singleton;
 	static bool hidpi_allowed;
 
+	runloop_function_t _run_loop = &__default_run_loop;
+
 public:
 	_FORCE_INLINE_ static DisplayServer *get_singleton() {
 		return singleton;
+	}
+
+	_FORCE_INLINE_ runloop_function_t get_runloop() const {
+		return _run_loop;
+	}
+
+	_FORCE_INLINE_ void set_runloop(runloop_function_t runloop) {
+		_run_loop = runloop;
 	}
 
 	enum WindowMode {

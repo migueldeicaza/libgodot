@@ -926,7 +926,11 @@ void OS_LinuxBSD::run() {
 	//uint64_t frame=0;
 
 	while (true) {
-		DisplayServer::get_singleton()->process_events(); // get rid of pending events
+		auto display_server = DisplayServer::get_singleton();
+		auto runloop = display_server->get_runloop();
+		runloop();
+		
+		display_server->process_events(); // get rid of pending events
 #ifdef JOYDEV_ENABLED
 		joypad->process_joypads();
 #endif
