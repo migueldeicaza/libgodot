@@ -5636,29 +5636,32 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 		GetClientRect(wd.hWnd, &real_client_rect);
 
 #ifdef RD_ENABLED
+		Ref<RenderingNativeSurfaceWindows> windows_surface = nullptr;
+#ifdef VULKAN_ENABLED || D3D12_ENABLED
+		if (rendering_driver == "vulkan" || rendering_driver == "d3d12") {
+			windows_surface = RenderingNativeSurfaceWindows::create(wd.hWnd, hInstance);
+		}
+#endif
+
+		if (!rendering_context) {
+			if (windows_surface.is_valid()) {
+				rendering_context = windows_surface->create_rendering_context(rendering_driver);
+			}
+
+			if (rendering_context) {
+				if (rendering_context->initialize() != OK) {
+					memdelete(rendering_context);
+					rendering_context = nullptr;
+					return INVALID_WINDOW_ID;
+				}
+			}
+		}
+
 		if (rendering_context) {
-			union {
-#ifdef VULKAN_ENABLED
-				RenderingContextDriverVulkanWindows::WindowPlatformData vulkan;
-#endif
-#ifdef D3D12_ENABLED
-				RenderingContextDriverD3D12::WindowPlatformData d3d12;
-#endif
-			} wpd;
-#ifdef VULKAN_ENABLED
-			if (rendering_driver == "vulkan") {
-				wpd.vulkan.window = wd.hWnd;
-				wpd.vulkan.instance = hInstance;
-			}
-#endif
-#ifdef D3D12_ENABLED
-			if (rendering_driver == "d3d12") {
-				wpd.d3d12.window = wd.hWnd;
-			}
-#endif
-			if (rendering_context->window_create(id, &wpd) != OK) {
+			if (rendering_context->window_create(id, windows_surface) != OK) {
 				ERR_PRINT(vformat("Failed to create %s window.", rendering_driver));
 				memdelete(rendering_context);
+				memdelete(windows_surface);
 				rendering_context = nullptr;
 				windows.erase(id);
 				return INVALID_WINDOW_ID;
@@ -5667,6 +5670,7 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 			rendering_context->window_set_size(id, real_client_rect.right - real_client_rect.left, real_client_rect.bottom - real_client_rect.top);
 			rendering_context->window_set_vsync_mode(id, p_vsync_mode);
 			wd.context_created = true;
+			memdelete(windows_surface);
 		}
 #endif
 
@@ -6132,71 +6136,6 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 
 	_register_raw_input_devices(INVALID_WINDOW_ID);
 
-#if defined(RD_ENABLED)
-#if defined(VULKAN_ENABLED)
-	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanWindows);
-		tested_drivers.set_flag(DRIVER_ID_RD_VULKAN);
-	}
-#endif
-#if defined(D3D12_ENABLED)
-	if (rendering_driver == "d3d12") {
-		rendering_context = memnew(RenderingContextDriverD3D12);
-		tested_drivers.set_flag(DRIVER_ID_RD_D3D12);
-	}
-#endif
-
-	if (rendering_context) {
-		if (rendering_context->initialize() != OK) {
-			bool failed = true;
-#if defined(VULKAN_ENABLED)
-			bool fallback_to_vulkan = GLOBAL_GET("rendering/rendering_device/fallback_to_vulkan");
-			if (failed && fallback_to_vulkan && rendering_driver != "vulkan") {
-				memdelete(rendering_context);
-				rendering_context = memnew(RenderingContextDriverVulkanWindows);
-				tested_drivers.set_flag(DRIVER_ID_RD_VULKAN);
-				if (rendering_context->initialize() == OK) {
-					WARN_PRINT("Your video card drivers seem not to support Direct3D 12, switching to Vulkan.");
-					rendering_driver = "vulkan";
-					OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
-					failed = false;
-				}
-			}
-#endif
-#if defined(D3D12_ENABLED)
-			bool fallback_to_d3d12 = GLOBAL_GET("rendering/rendering_device/fallback_to_d3d12");
-			if (failed && fallback_to_d3d12 && rendering_driver != "d3d12") {
-				memdelete(rendering_context);
-				rendering_context = memnew(RenderingContextDriverD3D12);
-				tested_drivers.set_flag(DRIVER_ID_RD_D3D12);
-				if (rendering_context->initialize() == OK) {
-					WARN_PRINT("Your video card drivers seem not to support Vulkan, switching to Direct3D 12.");
-					rendering_driver = "d3d12";
-					OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
-					failed = false;
-				}
-			}
-#endif
-			bool fallback_to_opengl3 = GLOBAL_GET("rendering/rendering_device/fallback_to_opengl3");
-			if (failed && fallback_to_opengl3 && rendering_driver != "opengl3") {
-				memdelete(rendering_context);
-				rendering_context = nullptr;
-				tested_drivers.set_flag(DRIVER_ID_COMPAT_OPENGL3);
-				WARN_PRINT("Your video card drivers seem not to support Direct3D 12 or Vulkan, switching to OpenGL 3.");
-				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_method("gl_compatibility");
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
-				failed = false;
-			}
-			if (failed) {
-				memdelete(rendering_context);
-				rendering_context = nullptr;
-				r_error = ERR_UNAVAILABLE;
-				return;
-			}
-		}
-	}
-#endif
 // Init context and rendering device
 #if defined(GLES3_ENABLED)
 
@@ -6351,7 +6290,10 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 	}
 
 	WindowID main_window = _create_window(p_mode, p_vsync_mode, p_flags, Rect2i(window_position, p_resolution), false, INVALID_WINDOW_ID);
-	ERR_FAIL_COND_MSG(main_window == INVALID_WINDOW_ID, "Failed to create main window.");
+	if (main_window == INVALID_WINDOW_ID) {
+		r_error = ERR_UNAVAILABLE;
+		ERR_FAIL_MSG("Failed to create main window.");
+	}
 
 	joypad = new JoypadWindows(&windows[MAIN_WINDOW_ID].hWnd);
 

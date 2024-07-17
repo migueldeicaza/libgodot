@@ -30,6 +30,7 @@
 
 #import "rendering_context_driver_metal.h"
 
+#include "drivers/apple/rendering_native_surface_apple.h"
 #import "rendering_device_driver_metal.h"
 
 @protocol MTLDeviceEx <MTLDevice>
@@ -176,9 +177,11 @@ public:
 	}
 };
 
-RenderingContextDriver::SurfaceID RenderingContextDriverMetal::surface_create(const void *p_platform_data) {
-	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
-	Surface *surface = memnew(SurfaceLayer(wpd->layer, metal_device));
+RenderingContextDriver::SurfaceID RenderingContextDriverMetal::surface_create(Ref<RenderingNativeSurface> p_native_surface) {
+	Ref<RenderingNativeSurfaceApple> apple_native_surface = Object::cast_to<RenderingNativeSurfaceApple>(*p_native_surface);
+	ERR_FAIL_COND_V(apple_native_surface.is_null(), SurfaceID());
+
+	Surface *surface = memnew(SurfaceLayer((__bridge CAMetalLayer *)apple_native_surface->get_layer(), metal_device));
 
 	return SurfaceID(surface);
 }

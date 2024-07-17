@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rendering_context_driver_vulkan_macos.mm                              */
+/*  rendering_native_surface.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,42 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rendering_context_driver_vulkan_macos.h"
+#ifndef RENDERING_NATIVE_SURFACE_H
+#define RENDERING_NATIVE_SURFACE_H
 
-#ifdef VULKAN_ENABLED
+#include "core/object/class_db.h"
+#include "core/object/ref_counted.h"
 
-#ifdef USE_VOLK
-#include <volk.h>
-#else
-#include <vulkan/vulkan_metal.h>
-#endif
+class RenderingContextDriver;
 
-const char *RenderingContextDriverVulkanMacOS::_get_platform_surface_extension() const {
-	return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
-}
+class RenderingNativeSurface : public RefCounted {
+	GDCLASS(RenderingNativeSurface, RefCounted);
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanMacOS::surface_create(const void *p_platform_data) {
-	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
+	static void _bind_methods();
 
-	VkMetalSurfaceCreateInfoEXT create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-	create_info.pLayer = *wpd->layer_ptr;
+public:
+	RenderingNativeSurface();
+	~RenderingNativeSurface();
 
-	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
-	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
-	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
+	virtual RenderingContextDriver *create_rendering_context(const String &p_driver_name) = 0;
+};
 
-	Surface *surface = memnew(Surface);
-	surface->vk_surface = vk_surface;
-	return SurfaceID(surface);
-}
-
-RenderingContextDriverVulkanMacOS::RenderingContextDriverVulkanMacOS() {
-	// Does nothing.
-}
-
-RenderingContextDriverVulkanMacOS::~RenderingContextDriverVulkanMacOS() {
-	// Does nothing.
-}
-
-#endif // VULKAN_ENABLED
+#endif // RENDERING_NATIVE_SURFACE_H

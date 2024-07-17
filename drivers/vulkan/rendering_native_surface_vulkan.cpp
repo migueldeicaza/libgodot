@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rendering_context_driver_vulkan_ios.h                                 */
+/*  rendering_native_surface_vulkan.cpp                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,31 +28,45 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDERING_CONTEXT_DRIVER_VULKAN_IOS_H
-#define RENDERING_CONTEXT_DRIVER_VULKAN_IOS_H
-
-#ifdef VULKAN_ENABLED
+#include "rendering_native_surface_vulkan.h"
 
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 
-#import <QuartzCore/CAMetalLayer.h>
+void RenderingNativeSurfaceVulkan::_bind_methods() {
+	ClassDB::bind_static_method("RenderingNativeSurfaceVulkan", D_METHOD("create", "vulkan_surface"), &RenderingNativeSurfaceVulkan::create_api);
+}
 
-class RenderingContextDriverVulkanIOS : public RenderingContextDriverVulkan {
-private:
-	virtual const char *_get_platform_surface_extension() const override final;
+Ref<RenderingNativeSurfaceVulkan> RenderingNativeSurfaceVulkan::create_api(GDExtensionConstPtr<const void> p_vulkan_surface) {
+	Ref<RenderingNativeSurfaceVulkan> result = nullptr;
+#ifdef VULKAN_ENABLED
+	result = RenderingNativeSurfaceVulkan::create((VkSurfaceKHR)p_vulkan_surface.operator const void *());
+#endif
+	return result;
+}
 
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
+#ifdef VULKAN_ENABLED
 
-public:
-	struct WindowPlatformData {
-		CAMetalLayer *const *layer_ptr;
-	};
+Ref<RenderingNativeSurfaceVulkan> RenderingNativeSurfaceVulkan::create(VkSurfaceKHR p_vulkan_surface) {
+	Ref<RenderingNativeSurfaceVulkan> result = memnew(RenderingNativeSurfaceVulkan);
+	result->vulkan_surface = p_vulkan_surface;
+	return result;
+}
 
-	RenderingContextDriverVulkanIOS();
-	~RenderingContextDriverVulkanIOS();
-};
+#endif
 
-#endif // VULKAN_ENABLED
+RenderingContextDriver *RenderingNativeSurfaceVulkan::create_rendering_context(const String &p_driver_name) {
+#if defined(VULKAN_ENABLED)
+	if (p_driver_name == "vulkan") {
+		return memnew(RenderingContextDriverVulkan);
+	}
+#endif
+	return nullptr;
+}
 
-#endif // RENDERING_CONTEXT_DRIVER_VULKAN_IOS_H
+RenderingNativeSurfaceVulkan::RenderingNativeSurfaceVulkan() {
+	// Does nothing.
+}
+
+RenderingNativeSurfaceVulkan::~RenderingNativeSurfaceVulkan() {
+	// Does nothing.
+}

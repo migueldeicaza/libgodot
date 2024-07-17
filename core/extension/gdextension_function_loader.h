@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rendering_context_driver_vulkan_ios.mm                                */
+/*  gdextension_function_loader.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,42 +28,32 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "rendering_context_driver_vulkan_ios.h"
+#ifndef GDEXTENSION_FUNCTION_LOADER_H
+#define GDEXTENSION_FUNCTION_LOADER_H
 
-#ifdef VULKAN_ENABLED
+#include "core/extension/gdextension_loader.h"
+#include "core/os/shared_object.h"
+#include <functional>
 
-#ifdef USE_VOLK
-#include <volk.h>
-#else
-#include <vulkan/vulkan_metal.h>
-#endif
+class GDExtension;
 
-const char *RenderingContextDriverVulkanIOS::_get_platform_surface_extension() const {
-	return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
-}
+class GDExtensionFunctionLoader : public GDExtensionLoader {
+	friend class GDExtensionManager;
+	friend class GDExtension;
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanIOS::surface_create(const void *p_platform_data) {
-	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
+private:
+	String library_path;
+	GDExtensionInitializationFunction initialization_function = nullptr;
 
-	VkMetalSurfaceCreateInfoEXT create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-	create_info.pLayer = *wpd->layer_ptr;
+public:
+	Error open_library(const String &p_path) override;
+	Error initialize(GDExtensionInterfaceGetProcAddress p_get_proc_address, const Ref<GDExtension> &p_extension, GDExtensionInitialization *r_initialization) override;
+	void close_library() override;
+	bool is_library_open() const override;
+	bool has_library_changed() const override;
+	bool library_exists() const override;
 
-	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
-	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
-	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
+	void set_initialization_function(GDExtensionInitializationFunction initialization_function);
+};
 
-	Surface *surface = memnew(Surface);
-	surface->vk_surface = vk_surface;
-	return SurfaceID(surface);
-}
-
-RenderingContextDriverVulkanIOS::RenderingContextDriverVulkanIOS() {
-	// Does nothing.
-}
-
-RenderingContextDriverVulkanIOS::~RenderingContextDriverVulkanIOS() {
-	// Does nothing.
-}
-
-#endif // VULKAN_ENABLED
+#endif // GDEXTENSION_FUNCTION_LOADER_H
