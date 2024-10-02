@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_driver_types.cpp                                             */
+/*  api.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,38 +28,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_driver_types.h"
+#include "api.h"
 
-#include "core/extension/gdextension_manager.h"
+#ifdef MACOS_ENABLED
 #include "core/object/class_db.h"
-#include "drivers/png/image_loader_png.h"
-#include "drivers/png/resource_saver_png.h"
 
-#include "drivers/vulkan/rendering_native_surface_vulkan.h"
+#include "drivers/apple/rendering_native_surface_apple.h"
 
-static Ref<ImageLoaderPNG> image_loader_png;
-static Ref<ResourceSaverPNG> resource_saver_png;
+#endif
 
-void register_core_driver_types() {
-	GDREGISTER_ABSTRACT_CLASS(RenderingNativeSurfaceVulkan)
-
-	image_loader_png.instantiate();
-	ImageLoader::add_image_format_loader(image_loader_png);
-
-	resource_saver_png.instantiate();
-	ResourceSaver::add_resource_format_saver(resource_saver_png);
+void register_core_macos_api() {
+#ifdef MACOS_ENABLED
+	GDREGISTER_ABSTRACT_CLASS(RenderingNativeSurfaceApple);
+#endif
 }
 
-void unregister_core_driver_types() {
-	ImageLoader::remove_image_format_loader(image_loader_png);
-	image_loader_png.unref();
-
-	ResourceSaver::remove_resource_format_saver(resource_saver_png);
-	resource_saver_png.unref();
+void unregister_core_macos_api() {
 }
 
-void register_driver_types() {
+void register_macos_api() {
 }
 
-void unregister_driver_types() {
+void unregister_macos_api() {
 }

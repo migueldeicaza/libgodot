@@ -168,14 +168,12 @@
 		return NO;
 	}
 
-	GLES3::TextureStorage::system_fbo = viewFramebuffer;
-
 	return YES;
 }
 
 // Clean up any buffers we have allocated.
 - (void)destroyFramebuffer {
-	GLES3::TextureStorage::system_fbo = 0;
+	DisplayServerIOS::get_singleton()->set_native_main_window_id(0);
 
 	glDeleteFramebuffersOES(1, &viewFramebuffer);
 	viewFramebuffer = 0;

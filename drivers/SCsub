@@ -30,7 +30,8 @@ SConscript("coremidi/SCsub")
 SConscript("winmidi/SCsub")
 
 # Graphics drivers
-SConscript("apple/SCsub")
+if env["platform"] == "ios" or env["platform"] == "macos":
+    SConscript("apple/SCsub")
 if env["vulkan"]:
     SConscript("vulkan/SCsub")
 if env["d3d12"]:

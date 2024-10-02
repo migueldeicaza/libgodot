@@ -32,7 +32,10 @@
 
 #if defined(IOS_ENABLED)
 
+#include "drivers/apple/rendering_native_surface_apple.h"
+
 void register_core_ios_api() {
+	GDREGISTER_ABSTRACT_CLASS(RenderingNativeSurfaceApple);
 }
 
 void unregister_core_ios_api() {

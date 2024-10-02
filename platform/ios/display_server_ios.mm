@@ -545,6 +545,15 @@ int64_t DisplayServerIOS::window_get_native_handle(HandleType p_handle_type, Win
 		case WINDOW_VIEW: {
 			return (int64_t)AppDelegate.viewController.godotView;
 		}
+#if defined(GLES3_ENABLED)
+		case OPENGL_FBO: {
+			if (rendering_driver == "opengl3") {
+				GodotOpenGLLayer *godotLayer = (GodotOpenGLLayer *)AppDelegate.viewController.godotView.layer;
+				return (int64_t)godotLayer->viewFramebuffer;
+			}
+			return 0;
+		}
+#endif
 		default: {
 			return 0;
 		}

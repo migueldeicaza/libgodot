@@ -35,6 +35,7 @@
 #include "core/object/ref_counted.h"
 
 class RenderingContextDriver;
+class GLESContext;
 
 class RenderingNativeSurface : public RefCounted {
 	GDCLASS(RenderingNativeSurface, RefCounted);
@@ -46,6 +47,7 @@ public:
 	~RenderingNativeSurface();
 
 	virtual RenderingContextDriver *create_rendering_context(const String &p_driver_name) = 0;
+	virtual GLESContext *create_gles_context() { return nullptr; };
 };
 
 #endif // RENDERING_NATIVE_SURFACE_H

@@ -3,4 +3,4 @@
 Import("env")
 
 # Driver source files
-env.add_source_files(env.drivers_sources, "*.cpp")
+env.add_source_files(env.drivers_sources, ["rendering_native_surface_apple.mm", "rendering_context_driver_vulkan_moltenvk.mm"])

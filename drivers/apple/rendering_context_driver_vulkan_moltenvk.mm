@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rendering_context_driver_vulkan_moltenvk.cpp                          */
+/*  rendering_context_driver_vulkan_moltenvk.mm                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,7 +30,7 @@
 
 #include "rendering_context_driver_vulkan_moltenvk.h"
 #include "drivers/apple/rendering_native_surface_apple.h"
-#include "rendering_native_surface_vulkan.h"
+#include "drivers/vulkan/rendering_native_surface_vulkan.h"
 
 #ifdef __APPLE__
 #ifdef VULKAN_ENABLED
@@ -51,7 +51,7 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanMoltenVk::surface_
 
 	VkMetalSurfaceCreateInfoEXT create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-	create_info.pLayer = apple_native_surface->get_layer();
+	create_info.pLayer = (__bridge CAMetalLayer *)apple_native_surface->get_layer();
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);

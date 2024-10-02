@@ -82,6 +82,7 @@ public:
 		WINDOW_HANDLE,
 		WINDOW_VIEW,
 		OPENGL_CONTEXT,
+		OPENGL_FBO,
 	};
 
 	enum Context {

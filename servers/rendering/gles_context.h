@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rendering_native_surface_apple.cpp                                    */
+/*  gles_context.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,50 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rendering_native_surface_apple.h"
+#ifndef GLES_CONTEXT_H
+#define GLES_CONTEXT_H
 
-#ifdef VULKAN_ENABLED
-#include "drivers/vulkan/rendering_context_driver_vulkan_moltenvk.h"
-#endif
+#include "core/object/class_db.h"
+#include "core/object/ref_counted.h"
+#include "servers/display_server.h"
+#include "servers/rendering/rendering_native_surface.h"
 
-#ifdef METAL_ENABLED
-#include "drivers/metal/rendering_context_driver_metal.h"
-#endif
+class GLESContext {
+public:
+	virtual void initialize() = 0;
+	virtual bool create_framebuffer(DisplayServer::WindowID p_id, Ref<RenderingNativeSurface> p_native_surface) = 0;
+	virtual void resized(DisplayServer::WindowID p_id) = 0;
+	virtual void begin_rendering(DisplayServer::WindowID p_id) = 0;
+	virtual void end_rendering(DisplayServer::WindowID p_id) = 0;
+	virtual bool destroy_framebuffer(DisplayServer::WindowID p_id) = 0;
+	virtual void deinitialize() = 0;
+	virtual uint64_t get_fbo(DisplayServer::WindowID p_id) const = 0;
+};
 
-void RenderingNativeSurfaceApple::_bind_methods() {
-	ClassDB::bind_static_method("RenderingNativeSurfaceApple", D_METHOD("create", "layer"), &RenderingNativeSurfaceApple::create_api);
-}
-
-Ref<RenderingNativeSurfaceApple> RenderingNativeSurfaceApple::create_api(/* GDExtensionConstPtr<const void> */ uint64_t p_layer) {
-	return RenderingNativeSurfaceApple::create((void *)p_layer /* .operator const void *() */);
-}
-
-Ref<RenderingNativeSurfaceApple> RenderingNativeSurfaceApple::create(void *p_layer) {
-	Ref<RenderingNativeSurfaceApple> result = memnew(RenderingNativeSurfaceApple);
-	result->layer = p_layer;
-	return result;
-}
-
-RenderingContextDriver *RenderingNativeSurfaceApple::create_rendering_context(const String &p_driver_name) {
-#ifdef __APPLE__
-#ifdef VULKAN_ENABLED
-	if (p_driver_name == "vulkan") {
-		return memnew(RenderingContextDriverVulkanMoltenVk);
-	}
-#endif
-#ifdef METAL_ENABLED
-	if (p_driver_name == "vulkan") {
-		return memnew(RenderingContextDriverMetal);
-	}
-#endif
-#endif // __APPLE__
-	return nullptr;
-}
-
-RenderingNativeSurfaceApple::RenderingNativeSurfaceApple() {
-	// Does nothing.
-}
-
-RenderingNativeSurfaceApple::~RenderingNativeSurfaceApple() {
-	// Does nothing.
-}
+#endif // GLES_CONTEXT_H

@@ -275,7 +275,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 		timestamp_vp_map[rt_id] = p_viewport->self;
 	}
 
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" && p_viewport->viewport_to_screen != DisplayServer::INVALID_WINDOW_ID) {
 		// This is currently needed for GLES to keep the current window being rendered to up to date
 		DisplayServer::get_singleton()->gl_window_make_current(p_viewport->viewport_to_screen);
 	}
@@ -876,7 +876,9 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 
 	if (p_swap_buffers && !blit_to_screen_list.is_empty()) {
 		for (const KeyValue<int, Vector<BlitToScreen>> &E : blit_to_screen_list) {
+			DisplayServer::get_singleton()->gl_window_make_current(E.key);
 			RSG::rasterizer->blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
+			RSG::rasterizer->gl_end_frame(p_swap_buffers);
 		}
 	}
 }
@@ -1027,8 +1029,8 @@ void RendererViewport::viewport_attach_to_screen(RID p_viewport, const Rect2 &p_
 	ERR_FAIL_NULL(viewport);
 
 	if (p_screen != DisplayServer::INVALID_WINDOW_ID) {
-		// If using OpenGL we can optimize this operation by rendering directly to system_fbo
-		// instead of rendering to fbo and copying to system_fbo after
+		// If using OpenGL we can optimize this operation by rendering directly to the system fbo
+		// instead of rendering to fbo and copying to the system fbo after
 		if (RSG::rasterizer->is_low_end() && viewport->viewport_render_direct_to_screen) {
 			RSG::texture_storage->render_target_set_size(viewport->render_target, p_rect.size.x, p_rect.size.y, viewport->view_count);
 			RSG::texture_storage->render_target_set_position(viewport->render_target, p_rect.position.x, p_rect.position.y);
@@ -1062,7 +1064,7 @@ void RendererViewport::viewport_set_render_direct_to_screen(RID p_viewport, bool
 		RSG::texture_storage->render_target_set_size(viewport->render_target, viewport->size.x, viewport->size.y, viewport->view_count);
 	}
 
-	RSG::texture_storage->render_target_set_direct_to_screen(viewport->render_target, p_enable);
+	RSG::texture_storage->render_target_set_direct_to_screen(viewport->render_target, p_enable, viewport->viewport_to_screen);
 	viewport->viewport_render_direct_to_screen = p_enable;
 
 	// if attached to screen already, setup screen size and position, this needs to happen after setting flag to avoid an unnecessary buffer allocation

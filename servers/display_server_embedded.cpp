@@ -32,20 +32,13 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access_pack.h"
+#include "servers/rendering/gles_context.h"
 
 #ifdef RD_ENABLED
 #if defined(VULKAN_ENABLED)
-#include "drivers/vulkan/rendering_context_driver_vulkan_moltenvk.h"
-
-#ifdef USE_VOLK
-#include <volk.h>
-#else
-#include <vulkan/vulkan.h>
-#endif
+#include "drivers/vulkan/godot_vulkan.h"
 #endif // VULKAN_ENABLED
 #endif // RD_ENABLED
-
-#include "drivers/apple/rendering_native_surface_apple.h"
 
 Ref<RenderingNativeSurface> DisplayServerEmbedded::native_surface = nullptr;
 
@@ -109,7 +102,15 @@ DisplayServerEmbedded::DisplayServerEmbedded(const String &p_rendering_driver, W
 
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3") {
-		ERR_FAIL_MSG("Embedded OpenGL rendering is not yet supported.");
+		gles_context = native_surface->create_gles_context();
+	}
+	if (gles_context) {
+		gles_context->initialize();
+		if (create_native_window(native_surface) != MAIN_WINDOW_ID) {
+			ERR_PRINT(vformat("Failed to create %s window.", rendering_driver));
+			r_error = ERR_UNAVAILABLE;
+			return;
+		}
 	}
 #endif
 
@@ -137,6 +138,14 @@ DisplayServerEmbedded::~DisplayServerEmbedded() {
 		rendering_context = nullptr;
 	}
 #endif
+
+#if defined(GLES3_ENABLED)
+	if (gles_context) {
+		gles_context->deinitialize();
+		memdelete(gles_context);
+		gles_context = nullptr;
+	}
+#endif
 }
 
 DisplayServer *DisplayServerEmbedded::create_func(const String &p_rendering_driver, WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, Error &r_error) {
@@ -149,9 +158,12 @@ Vector<String> DisplayServerEmbedded::get_rendering_drivers_func() {
 #if defined(VULKAN_ENABLED)
 	drivers.push_back("vulkan");
 #endif
-	//#if defined(GLES3_ENABLED)
-	//	drivers.push_back("opengl3");
-	//#endif
+#if defined(METAL_ENABLED)
+	drivers.push_back("metal");
+#endif
+#if defined(GLES3_ENABLED)
+	drivers.push_back("opengl3");
+#endif
 
 	return drivers;
 }
@@ -355,22 +367,32 @@ DisplayServer::WindowID DisplayServerEmbedded::get_window_at_screen_position(con
 }
 
 DisplayServer::WindowID DisplayServerEmbedded::create_native_window(Ref<RenderingNativeSurface> p_native_surface) {
-#if defined(RD_ENABLED)
-
 	WindowID window_id = window_id_counter++;
+	window_surfaces[window_id] = p_native_surface;
 
-	if (rendering_context->window_create(window_id, p_native_surface) != OK) {
-		ERR_PRINT(vformat("Failed to create native window."));
-		return INVALID_WINDOW_ID;
-	}
+#if defined(RD_ENABLED)
+	if (rendering_context) {
+		if (rendering_context->window_create(window_id, p_native_surface) != OK) {
+			ERR_PRINT(vformat("Failed to create native window."));
+			return INVALID_WINDOW_ID;
+		}
 
-	if (rendering_device) {
-		rendering_device->screen_create(window_id);
+		if (rendering_device) {
+			rendering_device->screen_create(window_id);
+		}
+		return window_id;
 	}
-	return window_id;
-#else
-	ERR_FAIL_V_MSG(INVALID_WINDOW_ID, "Cannot create native window with current driver.");
 #endif
+
+#if defined(GLES3_ENABLED)
+	if (gles_context) {
+		gles_context->create_framebuffer(window_id, p_native_surface);
+		gles_context->begin_rendering(window_id);
+		RasterizerGLES3::make_current(false);
+		return window_id;
+	}
+#endif
+	ERR_FAIL_V_MSG(INVALID_WINDOW_ID, "Cannot create native window with current driver.");
 }
 
 bool DisplayServerEmbedded::is_native_window(DisplayServer::WindowID p_id) {
@@ -387,10 +409,30 @@ void DisplayServerEmbedded::delete_native_window(DisplayServer::WindowID p_id) {
 		rendering_context->window_destroy(p_id);
 	}
 #endif
+
+#if defined(GLES3_ENABLED)
+	if (gles_context) {
+		gles_context->destroy_framebuffer(p_id);
+	}
+#endif
+
+	window_surfaces.erase(p_id);
 }
 
 int64_t DisplayServerEmbedded::window_get_native_handle(HandleType p_handle_type, WindowID p_window) const {
-	return 0; // Not supported.
+	switch (p_handle_type) {
+#if defined(GLES3_ENABLED)
+		case OPENGL_FBO: {
+			if (gles_context) {
+				return gles_context->get_fbo(p_window);
+			}
+			return 0;
+		}
+#endif
+		default: {
+			return 0; // Not supported.
+		}
+	}
 }
 
 void DisplayServerEmbedded::window_attach_instance_id(ObjectID p_instance, WindowID p_window) {
@@ -522,6 +564,12 @@ void DisplayServerEmbedded::resize_window(Size2i p_size, WindowID p_id) {
 	}
 #endif
 
+#if defined(GLES3_ENABLED)
+	if (gles_context) {
+		gles_context->resized(p_id);
+	}
+#endif
+
 	Variant resize_rect = Rect2i(Point2i(), size);
 	_window_callback(window_resize_callbacks[p_id], resize_rect);
 }
@@ -536,4 +584,21 @@ void DisplayServerEmbedded::window_set_vsync_mode(DisplayServer::VSyncMode p_vsy
 
 DisplayServer::VSyncMode DisplayServerEmbedded::window_get_vsync_mode(WindowID p_window) const {
 	return DisplayServer::VSYNC_ENABLED;
+}
+
+void DisplayServerEmbedded::swap_buffers() {
+#if defined(GLES3_ENABLED)
+	if (gles_context) {
+		gles_context->end_rendering(current_window);
+	}
+#endif
+}
+
+void DisplayServerEmbedded::gl_window_make_current(DisplayServer::WindowID p_window_id) {
+#if defined(GLES3_ENABLED)
+	if (gles_context) {
+		gles_context->begin_rendering(p_window_id);
+	}
+	current_window = p_window_id;
+#endif
 }

@@ -37,10 +37,6 @@
 class RenderingNativeSurfaceApple : public RenderingNativeSurface {
 	GDCLASS(RenderingNativeSurfaceApple, RenderingNativeSurface);
 
-	static void _bind_methods();
-
-	void *layer = nullptr;
-
 public:
 	// TODO: Remove workaround when SwiftGodot starts to support const void * arguments.
 	static Ref<RenderingNativeSurfaceApple> create_api(/* GDExtensionConstPtr<const void> */ uint64_t p_layer);
@@ -52,9 +48,15 @@ public:
 	};
 
 	RenderingContextDriver *create_rendering_context(const String &p_driver_name) override;
+	GLESContext *create_gles_context() override;
 
 	RenderingNativeSurfaceApple();
 	~RenderingNativeSurfaceApple();
+
+private:
+	static void _bind_methods();
+
+	void *layer = nullptr;
 };
 
 #endif // RENDERING_NATIVE_SURFACE_APPLE_H

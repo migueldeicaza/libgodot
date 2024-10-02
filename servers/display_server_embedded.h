@@ -41,6 +41,8 @@
 
 #if defined(GLES3_ENABLED)
 #include "drivers/gles3/rasterizer_gles3.h"
+
+class GLESContext;
 #endif // GLES3_ENABLED
 
 class DisplayServerEmbedded : public DisplayServer {
@@ -51,6 +53,9 @@ class DisplayServerEmbedded : public DisplayServer {
 #if defined(RD_ENABLED)
 	RenderingContextDriver *rendering_context = nullptr;
 	RenderingDevice *rendering_device = nullptr;
+#endif
+#if defined(GLES3_ENABLED)
+	GLESContext *gles_context = nullptr;
 #endif
 	NativeMenu *native_menu = nullptr;
 
@@ -70,6 +75,11 @@ class DisplayServerEmbedded : public DisplayServer {
 	void perform_event(const Ref<InputEvent> &p_event);
 
 	static Ref<RenderingNativeSurface> native_surface;
+	HashMap<WindowID, Ref<RenderingNativeSurface>> window_surfaces;
+
+#if defined(GLES3_ENABLED)
+	WindowID current_window = INVALID_WINDOW_ID;
+#endif
 
 	DisplayServerEmbedded(const String &p_rendering_driver, DisplayServer::WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, Error &r_error);
 	~DisplayServerEmbedded();
@@ -188,7 +198,8 @@ public:
 
 	void resize_window(Size2i size, WindowID p_id);
 	void set_content_scale(float p_scale);
-	virtual void swap_buffers() override {}
+	virtual void swap_buffers() override;
+	virtual void gl_window_make_current(DisplayServer::WindowID p_window_id) override;
 };
 
 #endif // DISPLAY_SERVER_EMBEDDED_H
