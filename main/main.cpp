@@ -541,6 +541,7 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--quit-after <int>", "Quit after the given number of iterations. Set to 0 to disable.\n");
 	print_help_option("-l, --language <locale>", "Use a specific locale (<locale> being a two-letter code).\n");
 	print_help_option("--path <directory>", "Path to a project (<directory> must contain a \"project.godot\" file).\n");
+	print_help_option("--library-path <directory>", "Additional path to search for extension libraries.\n");
 	print_help_option("-u, --upwards", "Scan folders upwards for project.godot file.\n");
 	print_help_option("--main-pack <file>", "Path to a pack (.pck) file to load.\n");
 	print_help_option("--render-thread <mode>", "Render thread mode (\"unsafe\", \"safe\", \"separate\").\n");
@@ -1536,6 +1537,12 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			} else {
 				OS::get_singleton()->print("Missing relative or absolute path, aborting.\n");
 				goto error;
+			}
+		} else if (arg == "--library-path") { // set path to use to look for libraries
+			if (N) {
+				String p = N->get();
+				OS::get_singleton()->set_dynamic_library_search_path(p);
+				N = N->next();
 			}
 		} else if (arg == "-u" || arg == "--upwards") { // scan folders upwards
 			upwards = true;

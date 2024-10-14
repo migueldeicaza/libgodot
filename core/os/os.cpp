@@ -144,6 +144,10 @@ void OS::alert(const String &p_alert, const String &p_title) {
 	fprintf(stderr, "%s: %s\n", p_title.utf8().get_data(), p_alert.utf8().get_data());
 }
 
+void OS::set_dynamic_library_search_path(const String &p_path) { 
+	_library_search_path = p_path; 
+}
+
 void OS::set_low_processor_usage_mode(bool p_enabled) {
 	low_processor_usage_mode = p_enabled;
 }

@@ -59,6 +59,12 @@ Error EditorRun::run(const String &p_scene, const String &p_write_movie) {
 		args.push_back(resource_path.replace(" ", "%20"));
 	}
 
+	String library_search_path = OS::get_singleton()->get_dynamic_library_search_path();
+	if (!library_search_path.is_empty()) {
+		args.push_back("--library-path");
+		args.push_back(library_search_path);
+	}
+	
 	const String debug_uri = EditorDebuggerNode::get_singleton()->get_server_uri();
 	if (debug_uri.size()) {
 		args.push_back("--remote-debug");

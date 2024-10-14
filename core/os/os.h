@@ -56,6 +56,7 @@ class OS {
 	bool _verbose_stdout = false;
 	bool _debug_stdout = false;
 	String _local_clipboard;
+	String _library_search_path;
 	// Assume success by default, all failure cases need to set EXIT_FAILURE explicitly.
 	int _exit_code = EXIT_SUCCESS;
 	bool _allow_hidpi = false;
@@ -164,7 +165,10 @@ public:
 	virtual Error open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data = nullptr) { return ERR_UNAVAILABLE; }
 	virtual Error close_dynamic_library(void *p_library_handle) { return ERR_UNAVAILABLE; }
 	virtual Error get_dynamic_library_symbol_handle(void *p_library_handle, const String &p_name, void *&p_symbol_handle, bool p_optional = false) { return ERR_UNAVAILABLE; }
-
+	
+	String get_dynamic_library_search_path() { return _library_search_path; }
+	void set_dynamic_library_search_path(const String &p_path);
+	
 	virtual void set_low_processor_usage_mode(bool p_enabled);
 	virtual bool is_in_low_processor_usage_mode() const;
 	virtual void set_low_processor_usage_mode_sleep_usec(int p_usec);
