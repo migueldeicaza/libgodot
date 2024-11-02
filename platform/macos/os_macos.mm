@@ -39,6 +39,7 @@
 #include "core/crypto/crypto_core.h"
 #include "core/version_generated.gen.h"
 #include "main/main.h"
+#include "servers/display_server_embedded.h"
 
 #include <dlfcn.h>
 #include <libproc.h>
@@ -828,6 +829,7 @@ OS_MacOS::OS_MacOS() {
 #endif
 
 	DisplayServerMacOS::register_macos_driver();
+	DisplayServerEmbedded::register_embedded_driver();
 
 	// Implicitly create shared NSApplication instance.
 	[GodotApplication sharedApplication];
