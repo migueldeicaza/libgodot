@@ -845,10 +845,14 @@ OS_MacOS::OS_MacOS() {
 	[NSApp setMainMenu:main_menu];
 	[NSApp finishLaunching];
 
+#ifndef LIBGODOT_ENABLED
+	// When embedding Godot, do not force our delegate, as that assumes a DisplayServerMacOS
+	// instead of a DisplayServerEmbedded.
 	id delegate = [[GodotApplicationDelegate alloc] init];
 	ERR_FAIL_NULL(delegate);
 	[NSApp setDelegate:delegate];
 	[NSApp registerUserInterfaceItemSearchHandler:delegate];
+#endif
 
 	pre_wait_observer = CFRunLoopObserverCreate(kCFAllocatorDefault, kCFRunLoopBeforeWaiting, true, 0, &pre_wait_observer_cb, nullptr);
 	CFRunLoopAddObserver(CFRunLoopGetCurrent(), pre_wait_observer, kCFRunLoopCommonModes);
