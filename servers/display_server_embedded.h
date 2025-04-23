@@ -200,6 +200,11 @@ public:
 	void set_content_scale(float p_scale);
 	virtual void swap_buffers() override;
 	virtual void gl_window_make_current(DisplayServer::WindowID p_window_id) override;
+
+	virtual void mouse_set_mode(MouseMode p_mode) override;
+	virtual MouseMode mouse_get_mode() const override;
+	virtual Point2i mouse_get_position() const override;
+	virtual BitField<MouseButtonMask> mouse_get_button_state() const override;
 };
 
 #endif // DISPLAY_SERVER_EMBEDDED_H
