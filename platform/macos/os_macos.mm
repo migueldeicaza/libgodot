@@ -45,6 +45,8 @@
 #include <mach-o/dyld.h>
 #include <os/log.h>
 #include <sys/sysctl.h>
+#include "servers/display_server_embedded.h"
+
 
 void OS_MacOS::pre_wait_observer_cb(CFRunLoopObserverRef p_observer, CFRunLoopActivity p_activiy, void *p_context) {
 	// Prevent main loop from sleeping and redraw window during modal popup display.
@@ -919,6 +921,7 @@ OS_MacOS::OS_MacOS() {
 	}
 
 	[NSApp activateIgnoringOtherApps:YES];
+	DisplayServerEmbedded::register_embedded_driver();
 }
 
 OS_MacOS::~OS_MacOS() {

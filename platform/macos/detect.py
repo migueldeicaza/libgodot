@@ -172,9 +172,6 @@ def configure(env: "SConsEnvironment"):
             env.Append(CCFLAGS=["-fsanitize=thread"])
             env.Append(LINKFLAGS=["-fsanitize=thread"])
 
-        env.Append(LINKFLAGS=["-Wl,-stack_size," + hex(STACK_SIZE_SANITIZERS)])
-    else:
-        env.Append(LINKFLAGS=["-Wl,-stack_size," + hex(STACK_SIZE)])
 
     if env["use_coverage"]:
         env.Append(CCFLAGS=["-ftest-coverage", "-fprofile-arcs"])
