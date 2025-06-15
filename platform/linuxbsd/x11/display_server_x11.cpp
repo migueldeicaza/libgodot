@@ -6829,8 +6829,7 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 		}
 		driver_found = true;
 	}
-#endif
-#endif
+#endif // RD_ENABLED
 	// Initialize context and rendering device.
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3" || rendering_driver == "opengl3_es") {
