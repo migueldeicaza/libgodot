@@ -308,7 +308,6 @@ if env["library_type"] == "static_library":
     env.Append(CPPDEFINES=["LIBGODOT_ENABLED"])
 elif env["library_type"] == "shared_library":
     env.Append(CPPDEFINES=["LIBGODOT_ENABLED"])
-    env.Append(CCFLAGS=["-fPIC"])
     env.Append(STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME=True)
 else:
     env.__class__.add_program = methods.add_program
@@ -827,6 +826,11 @@ if env["disable_exceptions"]:
         env.Append(CXXFLAGS=["-fno-exceptions"])
 elif env.msvc:
     env.Append(CXXFLAGS=["/EHsc"])
+
+# Add -fPIC for shared library builds on non-MSVC compilers.
+# MSVC generates position-independent code by default.
+if env["library_type"] == "shared_library" and not env.msvc:
+    env.Append(CCFLAGS=["-fPIC"])
 
 # Configure compiler warnings
 if env.msvc and not methods.using_clang(env):  # MSVC

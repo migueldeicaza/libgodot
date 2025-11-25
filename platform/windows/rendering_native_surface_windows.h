@@ -60,6 +60,9 @@ public:
 		return instance;
 	}
 
+	void set_window(HWND p_window) { window = p_window; }
+	void set_instance(HINSTANCE p_instance) { instance = p_instance; }
+
 	RenderingContextDriver *create_rendering_context(const String &p_driver_name) override;
 
 	RenderingNativeSurfaceWindows();
