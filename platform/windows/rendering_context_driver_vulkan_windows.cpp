@@ -33,8 +33,10 @@
 #include "core/os/os.h"
 
 #include "rendering_context_driver_vulkan_windows.h"
+#include "rendering_native_surface_windows.h"
 
 #include "drivers/vulkan/godot_vulkan.h"
+#include "drivers/vulkan/rendering_native_surface_vulkan.h"
 
 const char *RenderingContextDriverVulkanWindows::_get_platform_surface_extension() const {
 	return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
@@ -64,7 +66,7 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 	VkResult err = vkCreateWin32SurfaceKHR(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
 	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
 
-	Ref<RenderingNativeSurfaceVulkan> vulkan_surface = RenderingContextDriverVulkan::create(vk_surface);
+	Ref<RenderingNativeSurfaceVulkan> vulkan_surface = RenderingNativeSurfaceVulkan::create(vk_surface);
 	RenderingContextDriver::SurfaceID result = RenderingContextDriverVulkan::surface_create(vulkan_surface);
 	return result;
 }

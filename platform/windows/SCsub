@@ -26,6 +26,7 @@ common_win = [
     "rendering_context_driver_vulkan_windows.cpp",
     "drop_target_windows.cpp",
     "rendering_native_surface_windows.cpp",
+    "libgodot_windows.cpp",
 ]
 
 if env.msvc:
@@ -71,8 +72,8 @@ else:
 if env.msvc:
     env.Depends(prog, "godot.natvis")
 
-# Build console wrapper app.
-if env["windows_subsystem"] == "gui":
+# Build console wrapper app (only for executable builds).
+if env["windows_subsystem"] == "gui" and env["library_type"] == "executable":
     env_wrap = env.Clone()
     res_wrap_file = "godot_res_wrap.rc"
     res_wrap_target = "godot_res_wrap" + env["OBJSUFFIX"]
@@ -135,7 +136,7 @@ if env["d3d12"]:
 if not os.getenv("VCINSTALLDIR"):
     if env["debug_symbols"]:
         env.AddPostAction(prog, env.Run(platform_windows_builders.make_debug_mingw))
-        if env["windows_subsystem"] == "gui":
+        if env["windows_subsystem"] == "gui" and env["library_type"] == "executable":
             env.AddPostAction(prog_wrap, env.Run(platform_windows_builders.make_debug_mingw))
 
 env.platform_sources += sources
